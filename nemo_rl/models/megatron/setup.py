@@ -321,6 +321,15 @@ def setup_model_config(
     # Validate optimizer configuration
     _validate_optimizer_config(config)
 
+    # Batch invariant mode for true on-policy
+    if config["megatron_cfg"].get("batch_invariant_mode", False):
+        model_cfg.batch_invariant_mode = True
+
+    if "attention_backend" in config["megatron_cfg"]:
+        from megatron.core.transformer.enums import AttnBackend
+
+        model_cfg.attention_backend = AttnBackend[config["megatron_cfg"]["attention_backend"]]
+
     # Optional layernorm epsilon
     if "layernorm_epsilon" in config["megatron_cfg"]:
         model_cfg.layernorm_epsilon = config["megatron_cfg"]["layernorm_epsilon"]
@@ -636,6 +645,15 @@ def setup_model_and_optimizer(
         get_embedding_ranks=get_embedding_ranks,
         get_position_embedding_ranks=get_position_embedding_ranks,
     )
+
+    if getattr(megatron_cfg.model, "batch_invariant_mode", False):
+        from megatron.core.transformer.custom_layers.batch_invariant_kernels import (
+            enable_batch_invariant_mode,
+        )
+
+        if torch.distributed.get_rank() == 0:
+            print("Enabling batch invariant mode globally", flush=True)
+        enable_batch_invariant_mode()
 
     if megatron_cfg.ft and megatron_cfg.ft.enable_ft_package:
         fault_tolerance.setup(megatron_cfg, state)

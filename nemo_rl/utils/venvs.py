@@ -30,6 +30,47 @@ DEFAULT_VENV_DIR = os.path.join(git_root, "venvs")
 logger = logging.getLogger(__name__)
 
 
+_FA3_WHEELS_URL = "https://windreamer.github.io/flash-attention3-wheels"
+
+
+def _install_flash_attn_3(venv_path: str):
+    """Install flash_attn_3 and fix its packaging for transformer-engine compatibility.
+
+    Upstream FA3 wheel places flash_attn_interface.py at the top-level instead of inside
+    the flash_attn_3 package. TE 2.8+ expects `from flash_attn_3.flash_attn_interface import ...`.
+    We apply the same fix as TE's own CI (qa/L3_pytorch_FA_versions_test/test.sh).
+    """
+    py, pip = (os.path.join(venv_path, "bin", b) for b in ("python", "pip"))
+
+    def _run(cmd):
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        return r.stdout.strip() if r.returncode == 0 else None
+
+    # Auto-detect CUDA/torch versions to construct the wheel index URL
+    suffix = _run([py, "-c",
+        "import torch; c=torch.version.cuda.replace('.',''); "
+        "v=torch.__version__.split('+')[0].split('.'); "
+        "print(f'cu{c}_torch{v[0]}{v[1]}0')"])
+    if not suffix:
+        print("[FA3] Could not detect torch/CUDA versions; skipping flash_attn_3 install", flush=True)
+        return
+
+    find_links = f"{_FA3_WHEELS_URL}/{suffix}"
+    print(f"[FA3] Installing flash_attn_3 from {find_links}", flush=True)
+
+    # Install pre-built wheel (--no-deps to avoid dependency conflicts)
+    if _run([pip, "install", "flash_attn_3", "--no-deps", "--find-links", find_links]) is None:
+        print("[FA3] Failed to install flash_attn_3 (batch_invariant_mode will not be available)", flush=True)
+        return
+
+    # Copy flash_attn_interface.py into the flash_attn_3/ package directory
+    sp = _run([py, "-c", "import site; print(site.getsitepackages()[0])"])
+    src, dst = os.path.join(sp, "flash_attn_interface.py"), os.path.join(sp, "flash_attn_3", "flash_attn_interface.py")
+    if os.path.exists(src) and not os.path.exists(dst):
+        shutil.copy2(src, dst)
+    print(f"[FA3] flash_attn_3 installed and packaging fixed ({suffix})", flush=True)
+
+
 @lru_cache(maxsize=None)
 def create_local_venv(
     py_executable: str, venv_name: str, force_rebuild: bool = False
@@ -99,6 +140,10 @@ def create_local_venv(
 
     # Return the path to the python executable in the virtual environment
     python_path = os.path.join(venv_path, "bin", "python")
+
+    if "mcore" in py_executable:
+        _install_flash_attn_3(venv_path)
+
     return python_path
 
 
