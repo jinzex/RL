@@ -1,4 +1,4 @@
-# Megatron-Inference Numerics Study
+# Megatron-Inference True On-Policy Study
 
 True on-policy RL training using Megatron-Inference to minimize training-generation mismatch (`gen_kl_error` -> 0).
 
@@ -44,12 +44,15 @@ sbatch --export=MODE=vllm        run_qwen30b_study.sh
 sbatch --export=MODE=m-inf       run_qwen30b_study.sh
 ```
 
-## Expected Results
+## Results
 
-| Model         | vLLM  | M-Inf + FA3                    |
-|---------------|-------|--------------------------------|
-| Qwen2.5-1.5B  | ~7e-4 | **~0**                         |
-| Qwen2.5-14B   | TBD   | TBD                            |
-| Qwen3-30B-A3B | ~2e-3 | ~1.5e-3 (MoE routing mismatch) |
+`train/gen_kl_error` across 50 GRPO steps:
 
-Track `train/gen_kl_error` on wandb.
+| Qwen2.5-1.5B | Qwen2.5-14B | Qwen3-30B-A3B |
+|:---:|:---:|:---:|
+| ![](assets/qwen_1.5b_gen_kl_error.png) | ![](assets/qwen_14b_gen_kl_error.png) | ![](assets/qwen_30a3b_gen_kl_error.png) |
+| ✅ | ✅ | 🚧 |
+| H100 GPU=8 | H100 GPU=8 | H100 GPU=16 |
+| TP=1 MBS=4 GBS=16 | TP=2 MBS=2 GBS=16 | TP=4 EP=16 MBS=1 GBS=16 |
+
+🚧 WIP to add router replay + more deterministic mode (GroupedGEMM is not batch invariant yet)
