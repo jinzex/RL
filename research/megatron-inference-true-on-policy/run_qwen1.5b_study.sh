@@ -39,21 +39,21 @@ set -euo pipefail
 # Configuration (override via --export or environment)
 # ---------------------------------------------------------------------------
 SCRIPT_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "$0")" && pwd)}"
-RL_DIR="/lustre/fs1/portfolios/coreai/projects/coreai_devtech_all/users/jinzex/post-training/RL"
-CONTAINER_IMAGE="/lustre/fsw/portfolios/coreai/users/jinzex/post-training/containers/nemo_rl_v0.5.0.sqsh"
 
 MODE="${MODE:?ERROR: MODE must be set. Use: vllm, m-inf, m-inf-fa3, or batch-invariant}"
 MAX_STEPS="${MAX_STEPS:-50}"
 GPUS_PER_NODE=8
 NUM_NODES="${SLURM_NNODES:-1}"
 
-# Source .env for secrets (HF_TOKEN, WANDB_API_KEY, WANDB_ENTITY).
+# Source .env for config and secrets.
 # Copy .env.template to .env and fill in your values.
 if [[ -f "${SCRIPT_DIR}/.env" ]]; then
     set -a; source "${SCRIPT_DIR}/.env"; set +a
 fi
 
 export TORCH_CUDA_ARCH_LIST='9.0 10.0'
+: "${RL_DIR:?Set RL_DIR in .env}"
+: "${CONTAINER_IMAGE:?Set CONTAINER_IMAGE in .env}"
 : "${HF_TOKEN:?Set HF_TOKEN in .env}"
 : "${HF_HOME:?Set HF_HOME in .env}"
 : "${WANDB_API_KEY:?Set WANDB_API_KEY in .env}"

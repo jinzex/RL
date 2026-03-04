@@ -22,10 +22,7 @@ enroot import --output nemo_rl_v0.5.0.sqsh 'docker://nvcr.io#nvidia/nemo-rl:v0.5
 
 # 3. Create .env with your config
 cp .env.template .env
-# Edit .env: set HF_TOKEN, HF_HOME, WANDB_API_KEY, WANDB_PROJECT
-
-# 4. Update paths in the scripts
-# Edit RL_DIR and CONTAINER_IMAGE at the top of each run_qwen*_study.sh
+# Edit .env: set RL_DIR, CONTAINER_IMAGE, HF_TOKEN, HF_HOME, WANDB_API_KEY, WANDB_PROJECT
 ```
 
 ## Run
@@ -55,4 +52,4 @@ sbatch --export=MODE=m-inf       run_qwen30b_study.sh
 | H100 GPU=8 | H100 GPU=8 | H100 GPU=16 |
 | TP=1 MBS=4 GBS=16 | TP=2 MBS=2 GBS=16 | TP=4 EP=16 MBS=1 GBS=16 |
 
-🚧 WIP to add router replay + more deterministic mode (GroupedGEMM is not batch invariant yet)
+Qwen3-30B-A3B is WIP 🚧 to add Router Replay + Grouped GEMM with batch invariant mode.
