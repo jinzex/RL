@@ -33,6 +33,7 @@ from megatron.bridge.training.config import (
     DistributedDataParallelConfig,
     LoggerConfig,
     OptimizerConfig,
+    RNGConfig,
     SchedulerConfig,
     TokenizerConfig,
     TrainingConfig,
@@ -378,9 +379,9 @@ def _apply_cuda_graph_and_rng_tracker_config(model_cfg: Any, config: PolicyConfi
     model_cfg.use_te_rng_tracker = config["megatron_cfg"]["use_te_rng_tracker"]
     model_cfg.inference_rng_tracker = config["megatron_cfg"]["inference_rng_tracker"]
     model_cfg.batch_invariant_mode = config["megatron_cfg"]["batch_invariant_mode"]
-    if model_cfg.batch_invariant_mode:
+    if "attention_backend" in config["megatron_cfg"]:
         from megatron.core.transformer.enums import AttnBackend
-        model_cfg.attention_backend = AttnBackend.flash
+        model_cfg.attention_backend = AttnBackend[config["megatron_cfg"]["attention_backend"]]
 
 
 def _apply_moe_config(model_cfg: Any, config: PolicyConfig) -> None:
@@ -423,6 +424,9 @@ def _apply_moe_config(model_cfg: Any, config: PolicyConfig) -> None:
     ]
 
     model_cfg.moe_permute_fusion = config["megatron_cfg"]["moe_permute_fusion"]
+    model_cfg.moe_enable_routing_replay = config["megatron_cfg"].get(
+        "moe_enable_routing_replay", False
+    )
 
 
 def _apply_precision_config(
@@ -602,6 +606,10 @@ def _create_megatron_config(
         model=model_cfg,
         checkpoint=checkpoint_config,
         logger=LoggerConfig(logging_level=0),
+        # rng=RNGConfig(
+        #     te_rng_tracker=config["megatron_cfg"].get("use_te_rng_tracker", False),
+        #     inference_rng_tracker=config["megatron_cfg"].get("inference_rng_tracker", False),
+        # ),
         train=TrainingConfig(
             micro_batch_size=1,  # ignored
             global_batch_size=config["train_global_batch_size"],  # ignored
@@ -655,6 +663,15 @@ def setup_model_and_optimizer(
         get_embedding_ranks=get_embedding_ranks,
         get_position_embedding_ranks=get_position_embedding_ranks,
     )
+
+    if getattr(megatron_cfg.model, "batch_invariant_mode", False):
+        from megatron.core.transformer.custom_layers.batch_invariant_kernels import (
+            enable_batch_invariant_mode,
+        )
+
+        if torch.distributed.get_rank() == 0:
+            print("Enabling batch invariant mode globally", flush=True)
+        enable_batch_invariant_mode()
 
     if megatron_cfg.ft and megatron_cfg.ft.enable_ft_package:
         fault_tolerance.setup(megatron_cfg, state)

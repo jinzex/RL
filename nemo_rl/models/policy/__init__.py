@@ -193,6 +193,13 @@ class MegatronConfig(TypedDict):
     moe_token_dispatcher_type: str
     # Can be used only with 'alltoall' token dispatcher
     moe_shared_expert_overlap: bool
+    # Use batch-invariant kernels (Triton matmul, log_softmax, mean, RMSNorm + FA num_splits=1)
+    # for deterministic forward execution regardless of batch size. Slower but needed for true on-policy.
+    batch_invariant_mode: NotRequired[bool]
+    attention_backend: NotRequired[str]
+    # Replay MoE routing decisions from generation during logprob computation
+    # to eliminate routing divergence between autoregressive and full-sequence forward passes.
+    moe_enable_routing_replay: NotRequired[bool]
     optimizer: MegatronOptimizerConfig
     scheduler: MegatronSchedulerConfig
     distributed_data_parallel_config: MegatronDDPConfig

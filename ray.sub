@@ -409,7 +409,7 @@ EOF
 done
 
 # Then we wait here for the file to be created by the head node container
-while check_srun_processes && ! srun --overlap --nodes=1 --ntasks=1 -w $head_node test -f $LOG_DIR/STARTED_RAY_HEAD; do
+while check_srun_processes && ! srun --overlap --nodes=1 --ntasks=1 -w $head_node /usr/bin/test -f $LOG_DIR/STARTED_RAY_HEAD; do
   echo "[INFO][$(date)] Waiting for head node container to start..."
   sleep 2
 done
