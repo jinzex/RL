@@ -29,16 +29,21 @@ cp .env.template .env
 
 ```bash
 # Qwen2.5-1.5B (1 node, TP=1)
-sbatch --export=MODE=vllm        run_qwen1.5b_study.sh
-sbatch --export=MODE=m-inf-fa3   run_qwen1.5b_study.sh
+sbatch --export=MODE=vllm             run_qwen1.5b_study.sh
+sbatch --export=MODE=m-inf           run_qwen1.5b_study.sh
+sbatch --export=MODE=m-inf-fa3       run_qwen1.5b_study.sh
+sbatch --export=MODE=batch-invariant run_qwen1.5b_study.sh
 
 # Qwen2.5-14B (1 node, TP=2)
-sbatch --export=MODE=vllm        run_qwen14b_study.sh
-sbatch --export=MODE=m-inf-fa3   run_qwen14b_study.sh
+sbatch --export=MODE=vllm             run_qwen14b_study.sh
+sbatch --export=MODE=m-inf           run_qwen14b_study.sh
+sbatch --export=MODE=m-inf-fa3       run_qwen14b_study.sh
+sbatch --export=MODE=batch-invariant run_qwen14b_study.sh
 
 # Qwen3-30B-A3B (2 nodes, TP=4, EP=16)
-sbatch --export=MODE=vllm        run_qwen30b_study.sh
-sbatch --export=MODE=m-inf       run_qwen30b_study.sh
+sbatch --export=MODE=vllm             run_qwen30b_study.sh
+sbatch --export=MODE=m-inf           run_qwen30b_study.sh
+sbatch --export=MODE=batch-invariant run_qwen30b_study.sh
 ```
 
 ## Results
